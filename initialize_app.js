@@ -20,17 +20,26 @@ function init(){
 		}
 	}
 
-	// ejemplo llamar función para seleccionar
-	select('tabla1', jsonObject)
+	// ejemplo llamar función para seleccionar retorna objeto de resultados obtenidos
+	select('tabla1',jsonSelect)
+	.then(function(obj){
+		console.log(obj)
+	})
+	.catch(function(msj){
+		console.error(msj)
+	})
 
-	let jsonInsert = 
-	{
-		cols : '8,texto prueba 1 log,ARTD961115F982,5',
-		keyCol : 'id_persona,rfc_persona',
-		posKey: '1,3'
+	let jsonInsert = {
+		cols : '11__usuario prueba 1__DOM__25',
 	}
-	// ejemplo llamar función para insertar
-	insert('t1', jsonInsert);
+	// ejemplo llamar función para insertar retorna objeto de datos insertados
+	insert('t1', jsonInsert)
+	.then(function(obj){
+		console.warn(obj)
+	})
+	.catch(function(msj){
+		console.error(msj)
+	})
 
 	
 }

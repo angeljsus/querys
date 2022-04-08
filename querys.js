@@ -84,7 +84,6 @@ function select(nombreTabla, jsonProp){
 								queryReturn += `${objectCond[index]} `;
 								type = parseInt(objectVals[index]);
 								type = typeof type;
-								// console.log(type)
 								if (type == 'number') {
 									queryReturn += `${objectVals[index]}`;
 								} else {
@@ -131,7 +130,6 @@ function select(nombreTabla, jsonProp){
 		})
 	})
 	.then(function(data){
-		// const db = getDatabase();
 		queryReturn = data.queryReturn;
 		// obtener los valores de los parametros de que existen en la consulta
 		if (data.status && jsonProp.where && jsonProp.where.valores) {
@@ -144,7 +142,7 @@ function select(nombreTabla, jsonProp){
 				tx.executeSql(queryReturn, params, function(tx, results){
 					console.log('Resultados encontrados: %s', results.rows.length)
 					console.table(results.rows)
-					// resolve(results.rows);
+					resolve(results.rows);
 				})
 			}, function(err){
 				console.log(err)
@@ -152,66 +150,39 @@ function select(nombreTabla, jsonProp){
 		})
 
 	})
-	.catch(function(msj){
-		console.error(msj)
-	})
 }
 
 function insert(nombreTabla, jsonProp){
-	let query = '';
 	let mensaje = '';
 	return new Promise(function(resolve, reject){
-		if (jsonProp.datos) {
-			resolve(jsonProp.datos.split(','))
+		if (jsonProp.cols) {
+			resolve(jsonProp.cols.replace(/__$/,'').split('__'))
 		} else {
-			reject('No hay datos para insertar dentro del objeto')
+			mensaje = 'No hay columnas para insertar.\n';
+			reject(mensaje)
 		}
 	}) 
 	.then(function(data){
+		query = `INSERT INTO ${nombreTabla} VALUES (`
+		data.forEach(function(item){
+			query += '?,'
+		})
+		query = query.replace(/,$/,'');
+		query += ');'
+		// console.log(query)
 		return new Promise(function(resolve, reject){
+			console.log('Consulta: %s', query)
 			db.transaction(function(tx){
-				tx.executeSql('SELECT * FROM t1',[],function(tx, results){
-					// console.log(results.rows.length)
-					if (results.rows.length == 0) {
-						// ejecutar consulta porque no hay nada en la tabla
-					} else {
-						let namesColums = Object.keys(results.rows[0]); 
-						query = `SELECT * FROM ${nombreTabla} WHERE `
-						console.log(namesColums)
-
-					}
-				})
+				tx.executeSql(query, data)
 			}, function(err){
 				reject(err.message)
 			}, function(){
+				mensaje = `Fila insertada: ${JSON.stringify(data)}`
 				console.log(mensaje)
-				// resolve(mensaje)
+				resolve(data)
 			})
 		})
-	})
-
-	// .then(function(data){
-	// 	console.warn(data)
-	// 	query = `INSERT INTO ${nombreTabla} VALUES (`
-	// 	data.forEach(function(item){
-	// 		query += '?,'
-	// 	})
-	// 	query = query.replace(/,$/,'');
-	// 	query += ');'
-
-	// 	return new Promise(function(resolve, reject){
-	// 		console.log('Consulta a ejecutar: %s', query)
-	// 		db.transaction(function(tx){
-	// 			tx.executeSql(query, data)
-	// 		}, function(err){
-	// 			reject(err.message)
-	// 		}, function(){
-	// 			mensaje = `Fila insertada: ${JSON.stringify(data)}`
-	// 			console.log(mensaje)
-	// 			resolve(mensaje)
-	// 		})
-	// 	})
-	// }) 
+	}) 
 }
 
 module.exports = { select, insert, db };
