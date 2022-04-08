@@ -1,11 +1,12 @@
-const db = openDatabase('querys_app','1.0','Almacenamiento de prueba de información, consultas sqlite', 1000000);
+const db = getDatabase();
 
 function select(nombreTabla, jsonProp){
 	console.log('Generando consulta..')
 	let query = 'SELECT ';
 	let objectVars = [], objectVals = [], objectCond = [], params = [];
-	let condicion = false, status = true;
+	let object = {}, jsonResponse = {};
 	let type = '', queryReturn = '', mensaje = '', contBucle = 1;
+	let hayWere = {};
 
 	return new Promise(function(resolve, reject){
 		if (jsonProp) {
@@ -18,55 +19,24 @@ function select(nombreTabla, jsonProp){
 			}
 			// hay condiciones ?  
 			if (jsonProp.where) {
-				if (jsonProp.where.variables && jsonProp.where.valores) {
-					console.log('Hay propiedades')
-					// agregar el where
-					query += ` FROM ${nombreTabla} WHERE `;
-					// se convierte en arreglo
-					objectVars = jsonProp.where.variables.replace(/,$/, '').split(',');
-					objectVals = jsonProp.where.valores.replace(/__$/, '').split('__');
-					if (jsonProp.where.condiciones) {
-						// hay condiciones
-						objectCond = jsonProp.where.condiciones.split(',')
-						condicion = true;
-					}
-					objectVars.forEach(function(variable, index){
-						if (!objectVals[index]) { 
-							mensaje = ``;
-							reject(`La cantidad de valores no corresponde a las variables enviadas:\nvars: ${objectVars.length}\nvals: ${objectVals.length}\nseparacion: ___`) 
-						};
-						query += variable + ' ';
-						if (condicion > 0) {
-							if (objectCond[index]) {
-								// agrega la condicion que lleva
-								query += `${objectCond[index]} `;
-							} else {
-								// agrega el operador =
-								query += '= ';
-							}
-						} else {
-							// todas las condiciones serán =
-								query += '= ';
-						}
-						query += '? ';
-						if (objectVars.length > contBucle) {
-							query += `AND `;
-						}
-						contBucle++;
-					})
+				object = getCondiciones(jsonProp, nombreTabla, 'insert')
+				if (object.error) {
+					reject(object.error)
 				} else {
-					query += ` FROM ${nombreTabla} `;
-					status = false
+					query += ` FROM ${nombreTabla} WHERE ${object.complemento}`;
+					jsonResponse = { consulta : query, valorVariables : object.valorVariables}
 				}
-			} else {
+			} 
+			else {
 					query += ` FROM ${nombreTabla} `;
-					status = false;
+					jsonResponse = { consulta : query, valorVariables : []}
 			}
-			resolve({queryReturn : query, status : status})
+			resolve(jsonResponse)
 		}
 	})
 	.then(function(data){
-		queryReturn = data.queryReturn
+		// console.warn(data)
+		queryReturn = data.consulta
 		return new Promise(function(resolve, reject){
 			// hay agrupaciones
 			contBucle = 1;
@@ -114,7 +84,7 @@ function select(nombreTabla, jsonProp){
 			}
 			// hay limite
 			if (jsonProp.limit) {
-				if (jsonProp.limit.start || jsonProp.limit.start == 0) {
+				if (jsonProp.limit.start || jsonProp.limit.start == 0 && jsonProp.limit.start !== false) {
 					queryReturn += ` LIMIT ${jsonProp.limit.start}`;
 					if (jsonProp.limit.end){
 						// agregar end
@@ -124,22 +94,17 @@ function select(nombreTabla, jsonProp){
 			}
 			// finalize
 			queryReturn += ';';
-			data.status = true;
-			data.queryReturn = queryReturn;
+			data.consulta = queryReturn;
 			resolve(data)
 		})
 	})
 	.then(function(data){
-		queryReturn = data.queryReturn;
-		// obtener los valores de los parametros de que existen en la consulta
-		if (data.status && jsonProp.where && jsonProp.where.valores) {
-				params = jsonProp.where.valores.replace(/__$/, '').split('__');
-		}
-		console.warn('INFO:\nQuery: %s\nValores: [%s]',queryReturn, params.toString());
+		queryReturn = data.consulta;
+		console.warn('INFO:\nQuery: %s\nValores: [%s]',queryReturn, data.valorVariables.toString());
 		return new Promise(function(resolve, reject){
 			db.transaction(function(tx){
 				console.log('Ejecutando consulta...')
-				tx.executeSql(queryReturn, params, function(tx, results){
+				tx.executeSql(queryReturn, data.valorVariables, function(tx, results){
 					console.log('Resultados encontrados: %s', results.rows.length)
 					console.table(results.rows)
 					resolve(results.rows);
@@ -171,7 +136,8 @@ function insert(nombreTabla, jsonProp){
 		query += ');'
 		// console.log(query)
 		return new Promise(function(resolve, reject){
-			console.log('Consulta: %s', query)
+			// console.log('Consulta: %s', query)
+			console.warn('INFO:\nQuery: %s\nValores: [%s]',query, JSON.stringify(data));
 			db.transaction(function(tx){
 				tx.executeSql(query, data)
 			}, function(err){
@@ -185,4 +151,157 @@ function insert(nombreTabla, jsonProp){
 	}) 
 }
 
-module.exports = { select, insert, db };
+
+function update(nombreTabla, jsonProp){
+	let mensaje = '';
+	let query = '';
+	return new Promise(function(resolve, reject){
+		mensaje += 'Faltan cosas:\n'
+		let error = 0;
+		let cols = 0;
+		let colsNames = 0;
+		let response = {}; 
+		let status = {};
+
+		if (!jsonProp.cols) {
+			mensaje += 'cols: No hay valores para modificar\n';
+			error++;
+		} else {
+			cols = jsonProp.cols.replace(/__$/,'').split('__');
+		}
+
+		if (!jsonProp.colsNames) {
+			mensaje += 'colsNames: No hay nombre de columnas\n';
+			error++;
+		} else {
+			colsNames = jsonProp.colsNames.replace(/,$/,'').split(',');
+			if (cols.length !== colsNames.length) {
+				mensaje += `Los parametros no tienen las mismas cantidades:\ncols: ${cols.length}\ncolsNames: ${colsNames.length}`;
+				error++;
+			}
+		}
+
+		if (error > 0) {
+			reject(mensaje)
+		} else {
+			if (jsonProp.where) {
+				status = getCondiciones(jsonProp, nombreTabla, 'update')
+				response = {valores : cols, columnas : colsNames, condicion: status}
+			} else {
+				response = {valores : cols, columnas : colsNames}
+			}
+
+			resolve(response)
+		}
+	})
+	.then(function(object){
+		return new Promise(function(resolve, reject){
+			// hay algun error retornado
+			if (object.condicion.error) {
+				reject(object.condicion.error)
+			} else {
+				query = `UPDATE ${nombreTabla} SET `;
+				object.columnas.forEach(function(colName, index){
+					if (index == 0) {
+						query += `${colName} = ?`
+					} else {
+						query += `, ${colName} = ?`
+					}
+				})
+				// agregar las condiciones
+				let noModificar = object.valores;
+				let valores = [];
+				// mandar los valores de las modificaciones
+				object.valores.forEach(function(valor){
+					valores.push(valor)
+				})
+				if (object.condicion.complemento) {
+					query += ' WHERE ' + object.condicion.complemento;
+					// mandar los valores de las condiciones
+					object.condicion.valorVariables.forEach(function(valor){
+						valores.push(valor)
+					})
+				}
+				// end query
+				query += ';';
+				resolve({consulta: query, valores: valores, dataReturn : noModificar})
+			}
+		})
+	})
+	.then(function(data){
+		return new Promise(function(resolve, reject){
+			db.transaction(function(tx){
+				console.warn('INFO:\nQuery: %s\nValores: %s',data.consulta, JSON.stringify(data.valores));
+				tx.executeSql(query, data.valores, function(tx, results){
+					console.log('Registros actualizados: %s\ncon los valores: %s',results.rowsAffected,JSON.stringify(data.dataReturn) )
+					resolve(results.rowsAffected)
+				})
+			}, function(err){
+				reject(err.message)
+			}, function(){
+			})
+		})
+	}) 
+}
+
+
+function getCondiciones(json, nombreTabla, statement){
+	console.log(json)
+	let query = '';
+	let condicion = '';
+	let contBucle = 1;
+	let mensaje = '';
+	let object = {};
+	if (json.where.variables && json.where.valores) {
+		console.log('Hay propiedades')
+		// se convierte en arreglo
+		objectVars = json.where.variables.replace(/,$/, '').split(',');
+		objectVals = json.where.valores.replace(/__$/, '').split('__');
+		if (json.where.condiciones) {
+			// hay condiciones
+			objectCond = json.where.condiciones.split(',')
+			condicion = true;
+		}
+		objectVars.forEach(function(variable, index){
+			if (!objectVals[index] && objectVals[index] < 0 ) { 
+				mensaje = `La cantidad de valores no corresponde a las variables enviadas, vars: ${objectVars.length} vals: ${objectVals.length}`;
+			};
+			query += variable + ' ';
+			if (condicion > 0) {
+				if (objectCond[index]) {
+					// agrega la condicion que lleva
+					query += `${objectCond[index]} `;
+				} else {
+					// agrega el operador =
+					query += '= ';
+				}
+			} else {
+				// todas las condiciones serán =
+					query += '= ';
+			}
+			query += '? ';
+			if (objectVars.length > contBucle) {
+				query += `AND `;
+			}
+			contBucle++;
+		})
+		if (objectVars.length == objectVals.length) {
+			object ={complemento : query, error: mensaje, valorVariables : objectVals} 
+		} else {
+			mensaje = `La cantidad de valores no corresponde a las variables enviadas, object.where.valores: ${objectVars.length} object.where.variables: ${objectVals.length}`;
+			object ={complemento : query, error: mensaje, valorVariables : objectVals} 
+		}
+		return object;
+	} 
+	else {
+		if (!json.where.variables && !json.where.valores) {
+			mensaje = '';
+		} else {
+			mensaje = `No existe variable o valor de object.where.valores o object.where.variables`;
+		}
+		object ={error: mensaje} 
+		return object;
+	}
+}
+
+module.exports = { select, insert, update};
