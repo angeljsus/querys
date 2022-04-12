@@ -4,9 +4,8 @@ function select(nombreTabla, jsonProp){
 	console.log('Generando consulta..')
 	let query = 'SELECT ';
 	let objectVars = [], objectVals = [], objectCond = [], params = [];
-	let object = {}, jsonResponse = {};
+	let object = {}, jsonResponse = {}, hayWere = {};
 	let type = '', queryReturn = '', mensaje = '', contBucle = 1;
-	let hayWere = {};
 
 	return new Promise(function(resolve, reject){
 		if (jsonProp) {
@@ -19,7 +18,7 @@ function select(nombreTabla, jsonProp){
 			}
 			// hay condiciones ?  
 			if (jsonProp.where) {
-				object = getCondiciones(jsonProp, nombreTabla, 'insert')
+				object = getCondiciones(jsonProp, nombreTabla)
 				if (object.error) {
 					reject(object.error)
 				} else {
@@ -100,7 +99,7 @@ function select(nombreTabla, jsonProp){
 	})
 	.then(function(data){
 		queryReturn = data.consulta;
-		console.warn('INFO:\nQuery: %s\nValores: [%s]',queryReturn, data.valorVariables.toString());
+		console.warn('INFO:\nQuery: %s\nValores: %s',queryReturn, JSON.stringify(data.valorVariables));
 		return new Promise(function(resolve, reject){
 			db.transaction(function(tx){
 				console.log('Ejecutando consulta...')
@@ -113,7 +112,6 @@ function select(nombreTabla, jsonProp){
 				console.log(err)
 			})
 		})
-
 	})
 }
 
@@ -153,15 +151,11 @@ function insert(nombreTabla, jsonProp){
 
 
 function update(nombreTabla, jsonProp){
-	let mensaje = '';
-	let query = '';
+	let mensaje = '', query = '';
 	return new Promise(function(resolve, reject){
 		mensaje += 'Faltan cosas:\n'
-		let error = 0;
-		let cols = 0;
-		let colsNames = 0;
-		let response = {}; 
-		let status = {};
+		let error = 0, cols = 0, colsNames = 0;
+		let response = {}, status = {};
 
 		if (!jsonProp.cols) {
 			mensaje += 'cols: No hay valores para modificar\n';
@@ -185,7 +179,7 @@ function update(nombreTabla, jsonProp){
 			reject(mensaje)
 		} else {
 			if (jsonProp.where) {
-				status = getCondiciones(jsonProp, nombreTabla, 'update')
+				status = getCondiciones(jsonProp, nombreTabla)
 				response = {valores : cols, columnas : colsNames, condicion: status}
 			} else {
 				response = {valores : cols, columnas : colsNames}
@@ -233,7 +227,7 @@ function update(nombreTabla, jsonProp){
 			db.transaction(function(tx){
 				console.warn('INFO:\nQuery: %s\nValores: %s',data.consulta, JSON.stringify(data.valores));
 				tx.executeSql(query, data.valores, function(tx, results){
-					console.log('Registros actualizados: %s\ncon los valores: %s',results.rowsAffected,JSON.stringify(data.dataReturn) )
+					console.log('Registros actualizados: %s\nValores consultados: %s',results.rowsAffected,JSON.stringify(data.dataReturn) )
 					resolve(results.rowsAffected)
 				})
 			}, function(err){
@@ -244,13 +238,48 @@ function update(nombreTabla, jsonProp){
 	}) 
 }
 
-
-function getCondiciones(json, nombreTabla, statement){
-	console.log(json)
+function deleteReg(nombreTabla, jsonProp){
+	let object = {};
+	let jsonResponse = { consulta : '', valores : []}
 	let query = '';
-	let condicion = '';
-	let contBucle = 1;
-	let mensaje = '';
+	return new Promise(function(resolve, reject){
+		if (jsonProp.where) {
+			object = getCondiciones(jsonProp, nombreTabla);
+			if (object.error) {
+				reject(object.error)
+			} else {
+				query += `DELETE FROM ${nombreTabla} `;
+				if (object.complemento) {
+					query += `WHERE ${object.complemento}`
+					jsonResponse.valores = object.valorVariables;
+				}
+				jsonResponse.consulta = query;
+				resolve(jsonResponse)
+			}
+		}
+	})
+	.then(function(data){
+		console.log(data)
+		return new Promise(function(resolve, reject){
+			db.transaction(function(tx){
+				console.warn('INFO:\nQuery: %s\nValores: %s',data.consulta, JSON.stringify(data.valores));
+				tx.executeSql(query, data.valores, function(tx, results){
+					console.log('Registros eliminados: %s\nValores consultados: %s',results.rowsAffected,JSON.stringify(data.valores) )
+					resolve(results.rowsAffected)
+				})
+			}, function(err){
+				reject(err.message)
+			}, function(){
+			})
+		})
+	})
+
+}
+
+
+function getCondiciones(json, nombreTabla){
+	// console.log(json)
+	let query = '', condicion = '', mensaje = '', contBucle = 1;
 	let object = {};
 	if (json.where.variables && json.where.valores) {
 		console.log('Hay propiedades')
@@ -304,4 +333,4 @@ function getCondiciones(json, nombreTabla, statement){
 	}
 }
 
-module.exports = { select, insert, update};
+module.exports = { select, insert, update, deleteReg};

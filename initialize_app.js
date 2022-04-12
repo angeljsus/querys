@@ -14,7 +14,7 @@ function init(){
 					variables : 'id,', valores: '7__', condiciones: '<'
 				},
 				group: {
-					variables : 'edad',// condiciones: '=, <', valores : '1__7'
+					variables : 'edad',// condiciones: '=,<', valores : '1__7'
 				},
 				order : { 
 					variables: 'id,', type : 'DESC' 
@@ -24,7 +24,7 @@ function init(){
 				}
 			}
 
-		// ejemplo llamar función para seleccionar retorna objeto de resultados obtenidos
+		// ejemplo llamar función para seleccionar, retorna objeto de resultados obtenidos
 		select('t1',jsonSelect)
 		.then(function(obj){
 			console.log(obj)
@@ -36,7 +36,7 @@ function init(){
 		let jsonInsert = {
 			cols : '11__usuario prueba 1__DOM__25',
 		}
-		// ejemplo llamar función para insertar retorna objeto de datos insertados
+		// ejemplo llamar función para insertar, retorna objeto de datos insertados
 		insert('t1', jsonInsert)
 		.then(function(obj){
 			console.warn(obj)
@@ -55,11 +55,25 @@ function init(){
 		// ejemplo llamar función para actualizar registros, retorna el numero de filas actualizadas
 		update('t1', jsonUpdate)
 		.then(function(rowsAffected){
-			console.log(object)
+			console.log(rowsAffected)
 		})
 		.catch(function(msj){
 			console.error(msj)
-		}) 
+		})
+
+		let jsonDelete = {
+			where : { 
+				variables : 'edad,', valores : '12', condiciones : '='
+			}
+		}
+		// ejemplo llamar función para eliminar registros, retorna el numero de filas eliminadas
+		deleteReg('t1', jsonDelete)
+		.then(function(rowsAffected){
+			console.log(rowsAffected)
+		})
+		.catch(function(msj){
+			console.error(msj)
+		})
 
 		
 	})
