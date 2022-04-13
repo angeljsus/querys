@@ -3,7 +3,7 @@ const db = getDatabase();
 function select(nombreTabla, jsonProp){
 	console.log('Generando consulta..')
 	let query = 'SELECT ';
-	let objectVars = [], objectVals = [], objectCond = [], params = [];
+	let objectVars = [], objectVals = [], objectCond = [], params = [], resultado = [];
 	let object = {}, jsonResponse = {}, hayWere = {};
 	let type = '', queryReturn = '', mensaje = '', contBucle = 1;
 
@@ -105,8 +105,8 @@ function select(nombreTabla, jsonProp){
 				console.log('Ejecutando consulta...')
 				tx.executeSql(queryReturn, data.valorVariables, function(tx, results){
 					console.log('Resultados encontrados: %s', results.rows.length)
-					console.table(results.rows)
-					resolve(results.rows);
+					resultado = Object.keys(results.rows).map(function (key) { return results.rows[key]; });
+					resolve(resultado);
 				})
 			}, function(err){
 				console.log(err)
@@ -142,7 +142,6 @@ function insert(nombreTabla, jsonProp){
 				reject(err.message)
 			}, function(){
 				mensaje = `Fila insertada: ${JSON.stringify(data)}`
-				console.log(mensaje)
 				resolve(data)
 			})
 		})

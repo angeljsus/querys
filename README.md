@@ -123,9 +123,9 @@ Ejecuta consultas de tipo `SELECT` para acceder a información almacenada dentro
     ```
 #### Resultados 
 
-La función `select` regresa un objeto de tipo `json` con los datos encontrados por la consulta generada con los parámetros enviados. En caso de no encontrar registros manda un objeto vacio `{}`.
+La función `select` regresa un objeto de tipo `array` con los datos encontrados por la consulta generada con los parámetros enviados. En caso de no encontrar registros manda un objeto vacio `[]`.
 ```javascript
-    let jsonSelect = {
+    let jsonQuery = {
         "cols" : "id,nombre,apellidos,ciudad,edad",
         "where" : {
             "variables" : "apellidos", 
@@ -137,12 +137,46 @@ La función `select` regresa un objeto de tipo `json` con los datos encontrados 
     select('tabla1', jsonSelect)
      .then(function(respObj){
         // ejemplo contenido del respObj: 
-        // { id:98, nombre:"Faustino", apellidos:"Masa López", ciudad:"Puebla", edad:34 }
-         console.log(respObj);
+        console.log(respObj) // salida: [{ id:98, nombre:"Faustino", apellidos:"Masa López", ciudad:"Puebla", edad:34 }];
      })
      .catch(function(errMsj){
          console.error(errMsj)
      })
+    
+     // nueva consulta
+    jsonQuery = {
+        "where" : {
+            "variables" : "edad", 
+            "valores": "60",
+            "condiciones": "<"
+        }
+    }
+    
+    select('tabla1', jsonQuery)
+     .then(function(respObj){
+        // ejemplo lectura del resultado: 
+        respObj.foreach(function(row){
+            console.log(row) // salida: { id:10, nombre:"Faustino", apellidos:"Masa López", ciudad:"Puebla", edad:34
+            // propiedad
+            console.log(row.nombre) // salida: Faustino
+        })
+     })
+     .catch(function(errMsj){
+         console.error(errMsj)
+     })
+     
+    // nueva consulta
+    jsonQuery = {
+        "where" : {
+            "variables" : "edad,nombre,ciudad", 
+            "valores": "30,Roberto"
+        }
+    }
+    select('tabla1', jsonQuery)
+    .catch(function(msj){
+        // ejemplo rechazo
+        console.log(msj) // salida: La cantidad de valores no corresponde a las variables enviadas, object.where.valores: 2 object.where.variables: 3
+    })
 ```
 
 ### `insert( tableName, { props } )`
@@ -172,9 +206,12 @@ La función `insert` regresa un objeto de tipo `array` con la información que f
     
     insert('tabla1', jsonInsert)
      .then(function(respObj){
-        // ejemplo contenido del respObj: 
-        // ["89","Sammy Lorem","st Wally","Kansas City"]
-         console.log(respObj);
+        console.log(respObj); // salida: ["89","Sammy Lorem","st Wally","Kansas City"]
+         
+        // accediendo al valor de cada columna
+        obj.forEach(function(colValue){
+            console.log(colValue) // salida primera vuelta: 89 
+        });
      })
      .catch(function(errMsj){
          console.error(errMsj)
@@ -234,11 +271,7 @@ La función `update` regresa una variable de tipo `integer` con la cantidad de f
     
     update('tabla1', jsonUpdate)
      .then(function(rowsAffected){
-        // ejemplo contenido del rowsAffected: 
-        // 1 
-         console.log('Filas modificadas: %s', rowsAffected);
-         // con log
-         // Filas modificadas: 1 
+         console.log('Filas modificadas: %s', rowsAffected);  //salida: Filas modificadas: 1 
      })
      .catch(function(errMsj){
          console.error(errMsj)
@@ -289,11 +322,7 @@ La función `deleteReg` regresa una variable de tipo `integer` con la cantidad d
     
     deleteReg('tabla1', jsonDelete)
      .then(function(rowsAffected){
-        // ejemplo contenido del rowsAffected: 
-        // 1 
-         console.log('Filas eliminadas: %s', rowsAffected);
-         // con log
-         // Filas eliminadas: 8 
+         console.log('Filas eliminadas: %s', rowsAffected); // salida: Filas eliminadas: 8 
      })
      .catch(function(errMsj){
          console.error(errMsj)
