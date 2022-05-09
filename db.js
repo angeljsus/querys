@@ -18,7 +18,7 @@ function comprobarTablas(){
 					id int,
 					modelo varchar(200),
 					color varchar(300),
-					año int
+					year int
 				);`
 			);
 
