@@ -340,8 +340,7 @@ Inicializa la información de las tablas de la base de datos, permite tener un c
 ```javascript
 // verificar la existencia de las tablas
 comprobarTablas()
-    return setVersionApp(1.1,'Versión inicial de la aplicación, precarga de usuarios', jsonData)
-.then(function(){
+    .then(function(){
         // ejecutar la precarga de datos
         runPrecarga()
             .then(function(){
@@ -383,6 +382,7 @@ function runPrecarga(){
             // si es necesario, ejecutar distintas consultas antes de actualizar
             return deleteReg('t1', {})
         }
+        // si ya fue actualizada omite lo anterior
         return;
     })
     .then(function(){
