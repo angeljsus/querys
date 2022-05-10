@@ -341,10 +341,10 @@ Inicializa la información de las tablas de la base de datos, permite tener un c
 // verificar la existencia de las tablas
 comprobarTablas()
     .then(function(){
-        // ejecutar la precarga de datos
+        // ejecutar antes que lo demás, el código implementado dentro de la funcion
         runPrecarga()
             .then(function(){
-                // continuar...
+                // precarga lista, continuar...
             })
     })
 ```
