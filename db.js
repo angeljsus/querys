@@ -67,29 +67,31 @@ function setVersionApp(versionNumber, description, data){
 					.catch(function(msj){
 						console.error(msj)
 					})
-			} else{
-				if (versionNumber > obj.numero_version) {
-					return update('TBL_REG_VERSION',{cols:`${versionNumber}__${dateFormat}__${description}`, colsNames:'numero_version,fecha_version,descripcion_version', where: {variables :'numero_version', valores: '1__'}})
-						.then(function(){
-							return obj.numero_version;
-						})
-						.catch(function(err){
-							console.error(err)
-						})
-				}
-				return obj.numero_version;
 			}
+			return obj.numero_version;
 		})
 		.then(function(version){
 			return new Promise(function(resolve, reject){
 				if (data.tableName == '') {
 					reject('Falta la propiedad obj.tableName en la precarga de información version = '+ versionNumber)
-				} else {
-					return comprobarInformacion(data.tableName, data.querys)
-						.then(function(){
-							resolve(version);
-						})
-				}
+				} 
+				resolve()
+			})
+			.then(function(){
+				return comprobarInformacion(data.tableName, data.querys, versionNumber)
+					.then(function(){
+						console.log(versionNumber+'--'+version)
+						if (versionNumber > version) {
+							return update('TBL_REG_VERSION',{cols:`${versionNumber}__${dateFormat}__${description}`, colsNames:'numero_version,fecha_version,descripcion_version', where: {variables :'numero_version', valores: `${version}`}})
+								.then(function(){
+									return versionNumber;
+								})
+								.catch(function(err){
+									console.error(err)
+								})
+						}
+						return version;
+					})
 			})
 		})
 }
@@ -107,16 +109,18 @@ function comprobarInformacion(tableName, querys, version){
 		.then(function(obj){
 			if (obj[0].total == 0) {
 				db.transaction(function(tx){
-					querys.forEach(function(query, index){
-						tx.executeSql(query)
-					})
+					let i = 0;
+
+					for(i = 0; i < querys.length; i++){
+						tx.executeSql(querys[i])
+						if (i == (querys.length-1)) {
+							return
+						}
+					}
 				}, function(err){
 					console.error(err.message)
 				}, function(){
-					return getVersionData()
-						.then(function(obj){
-							console.log('¡TERMINO DE INSERTAR DATOS PARA VERSIÓN [%s]!', obj.numero_version);
-						})
+					console.log('¡TERMINO DE INSERTAR DATOS PARA VERSIÓN [%s]!', version);
 				})
 			}
 		})
