@@ -328,3 +328,79 @@ La función `deleteReg` regresa una variable de tipo `integer` con la cantidad d
          console.error(errMsj)
      })
 ```
+
+## Precarga
+
+### `runPrecarga()`
+
+#### Descripción
+
+Inicializa la información de las tablas de la base de datos, permite tener un control de la información por utilizar dentro del proyecto. A continuación, se presenta el uso de la precarga:
+
+```javascript
+// verificar la existencia de las tablas
+comprobarTablas()
+    return setVersionApp(1.1,'Versión inicial de la aplicación, precarga de usuarios', jsonData)
+.then(function(){
+        // ejecutar la precarga de datos
+        runPrecarga()
+            .then(function(){
+                // continuar...
+            })
+    })
+```
+
+#### `setVersionApp( version, descripcion, { props })`
+
+##### Descripción
+
+Dentro de la funcion `runPrecarga()` se utiliza la siguiente función `setVersionApp()` para registrar la versión y agregar los datos de inicialización.
+
+##### Parámetros
+- **version** (*number* *): especifica la versión de a información, siempre debe ser mayor a la anterior.
+- **descripcion** (*string* *): alguna información relevante o descripción de la versión.
+- **props** (*json* *): el objeto contiene la información a validar antes de crear la versión.
+    - **tableName** (*string* *): tabla donde se ejecutará la consulta para verificar la existencia de información, si no existe realizará las consultas enviadas en el mismo `json`.
+    - **querys** (*array* *): conjunto de consultas a ejecutarse dentro de la versión que se crea, cada elemento pasado en el arreglo debe contener sintaxis de consulta `SQLite`.
+
+#### Resultados
+```javascript
+function runPrecarga(){
+    let jsonData =
+        {
+            tableName: 't1',
+            querys: [
+                `INSERT INTO t1 VALUES (1,"Adrian","Cisneros",65),
+                (2,"Cruz","López",80),
+                (3,"Guille","Durón",22);`
+            ]
+        }
+    // crea la version 1.1 precargando la información dentro de t1 ejecutada por la consulta del arreglo jsonData.querys
+    return setVersionApp(1.1,'Versión inicial de la aplicación, precarga de usuarios', jsonData)
+    .then(function(version){
+        // eliminar datos antes de crear una nueva versión (si los datos son para la misma tabla), una vez creada la versión saltar consulta
+        if (version == 1.1) {
+            // si es necesario, ejecutar distintas consultas antes de actualizar
+            return deleteReg('t1', {})
+        }
+        return;
+    })
+    .then(function(){
+        // datos para la nueva versión
+        jsonData =
+        {
+            tableName: 't1',
+            querys: [
+                `INSERT INTO t1 VALUES (1,"Adrian","Cisneros",100),
+                (2,"Cruz","López",20),
+                (3,"Guille","Durón",42);`,
+            ]
+        }
+        // crear la versión, insertando los datos del json.querys y validando que no existan registros dentro de json.tableName
+        return setVersionApp(1.2,'Versión segunda de la aplicación, actualización de edades', jsonData)
+    })
+    .then(function(){
+    // ... continuar agregando nuevas versiones, siempre una mayor a la anterior
+    })
+}
+```

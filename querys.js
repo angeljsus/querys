@@ -258,7 +258,6 @@ function deleteReg(nombreTabla, jsonProp){
 		resolve(jsonResponse)
 	})
 	.then(function(data){
-		console.log(data)
 		return new Promise(function(resolve, reject){
 			db.transaction(function(tx){
 				console.warn('INFO:\nQuery: %s\nValores: %s',data.consulta, JSON.stringify(data.valores));
