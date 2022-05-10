@@ -18,6 +18,7 @@ function runPrecarga(){
 				// si es necesario, ejecutar distintas consultas antes de actualizar
 				return deleteReg('t1', {})
 			}
+			// si ya fue actualizada omite lo anterior
 			return;
 		})
 		.then(function(){
