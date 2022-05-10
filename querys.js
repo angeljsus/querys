@@ -109,7 +109,7 @@ function select(nombreTabla, jsonProp){
 					resolve(resultado);
 				})
 			}, function(err){
-				console.log(err)
+				reject(err.message)
 			})
 		})
 	})
@@ -135,13 +135,12 @@ function insert(nombreTabla, jsonProp){
 		// console.log(query)
 		return new Promise(function(resolve, reject){
 			// console.log('Consulta: %s', query)
-			console.warn('INFO:\nQuery: %s\nValores: [%s]',query, JSON.stringify(data));
+			console.warn('INFO:\nQuery: %s\nValores: %s',query, JSON.stringify(data));
 			db.transaction(function(tx){
 				tx.executeSql(query, data)
 			}, function(err){
 				reject(err.message)
 			}, function(){
-				mensaje = `Fila insertada: ${JSON.stringify(data)}`
 				resolve(data)
 			})
 		})
@@ -181,7 +180,7 @@ function update(nombreTabla, jsonProp){
 				status = getCondiciones(jsonProp, nombreTabla)
 				response = {valores : cols, columnas : colsNames, condicion: status}
 			} else {
-				response = {valores : cols, columnas : colsNames}
+				response = {valores : cols, columnas : colsNames, condicion: ''}
 			}
 
 			resolve(response)
@@ -242,20 +241,21 @@ function deleteReg(nombreTabla, jsonProp){
 	let jsonResponse = { consulta : '', valores : []}
 	let query = '';
 	return new Promise(function(resolve, reject){
+		query += `DELETE FROM ${nombreTabla} `;
 		if (jsonProp.where) {
 			object = getCondiciones(jsonProp, nombreTabla);
 			if (object.error) {
 				reject(object.error)
 			} else {
-				query += `DELETE FROM ${nombreTabla} `;
 				if (object.complemento) {
 					query += `WHERE ${object.complemento}`
 					jsonResponse.valores = object.valorVariables;
 				}
-				jsonResponse.consulta = query;
-				resolve(jsonResponse)
 			}
+
 		}
+		jsonResponse.consulta = query;
+		resolve(jsonResponse)
 	})
 	.then(function(data){
 		console.log(data)
