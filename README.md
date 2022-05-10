@@ -359,7 +359,7 @@ Dentro de la funcion `runPrecarga()` se utiliza la siguiente función `setVersio
 - **version** (*number* *): especifica la versión de a información, siempre debe ser mayor a la anterior.
 - **descripcion** (*string* *): alguna información relevante o descripción de la versión.
 - **props** (*json* *): el objeto contiene la información a validar antes de crear la versión.
-    - **tableName** (*string* *): tabla donde se ejecutará la consulta para verificar la existencia de información, si no existe realizará las consultas enviadas en el mismo `json`.
+    - **tableName** (*string* *): tabla donde se ejecutará la consulta para verificar la existencia de información, si no existe información dentro de la tabla realizará las consultas enviadas en el mismo `json`.
     - **querys** (*array* *): conjunto de consultas a ejecutarse dentro de la versión que se crea, cada elemento pasado en el arreglo debe contener sintaxis de consulta `SQLite`.
 
 #### Resultados
