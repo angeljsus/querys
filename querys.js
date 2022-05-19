@@ -117,6 +117,7 @@ function select(nombreTabla, jsonProp){
 
 function insert(nombreTabla, jsonProp){
 	let mensaje = '';
+	let newData = [];
 	return new Promise(function(resolve, reject){
 		if (jsonProp.cols) {
 			resolve(jsonProp.cols.replace(/__$/,'').split('__'))
@@ -127,20 +128,26 @@ function insert(nombreTabla, jsonProp){
 	}) 
 	.then(function(data){
 		query = `INSERT INTO ${nombreTabla} VALUES (`
+		newData = []
 		data.forEach(function(item){
-			query += '?,'
+			if (item == 'null') {
+				query += '?,'
+				newData.push(null)
+			} else {
+				query += '?,'
+				newData.push(item)
+			}
 		})
 		query = query.replace(/,$/,'');
 		query += ');'
-		// console.log(query)
 		return new Promise(function(resolve, reject){
-			// console.log('Consulta: %s', query)
-			console.warn('INFO:\nQuery: %s\nValores: %s',query, JSON.stringify(data));
+			console.warn('INFO:\nQuery: %s\nValores: %s',query, JSON.stringify(newData));
 			db.transaction(function(tx){
-				tx.executeSql(query, data)
+				tx.executeSql(query, newData)
 			}, function(err){
 				reject(err.message)
 			}, function(){
+				console.log('Consulta realizada con éxito.')
 				resolve(data)
 			})
 		})
