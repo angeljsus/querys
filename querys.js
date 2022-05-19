@@ -1,3 +1,4 @@
+'use strict';
 const db = getDatabase();
 
 function select(nombreTabla, jsonProp){
@@ -73,7 +74,6 @@ function select(nombreTabla, jsonProp){
 			}
 			// hay ordenamiento
 			if (jsonProp.order && jsonProp.order.variables) {
-				console.log('Hay ordenamiento')
 				queryReturn += ` ORDER BY ${jsonProp.order.variables.replace(/,$/, '')}`;
 				if (jsonProp.order.type) {
 					queryReturn += ` ${jsonProp.order.type}`;
@@ -97,12 +97,9 @@ function select(nombreTabla, jsonProp){
 	})
 	.then(function(data){
 		queryReturn = data.consulta;
-		console.warn('INFO:\nQuery: %s\nValores: %s',queryReturn, JSON.stringify(data.valorVariables));
 		return new Promise(function(resolve, reject){
 			db.transaction(function(tx){
-				console.log('Ejecutando consulta...')
 				tx.executeSql(queryReturn, data.valorVariables, function(tx, results){
-					console.log('Resultados encontrados: %s', results.rows.length)
 					resultado = Object.keys(results.rows).map(function (key) { return results.rows[key]; });
 					resolve(resultado);
 				})
@@ -116,6 +113,7 @@ function select(nombreTabla, jsonProp){
 function insert(nombreTabla, jsonProp){
 	let mensaje = '';
 	let newData = [];
+	let query = '';
 	return new Promise(function(resolve, reject){
 		if (jsonProp.cols) {
 			resolve(jsonProp.cols.replace(/__$/,'').split('__'))
@@ -139,13 +137,11 @@ function insert(nombreTabla, jsonProp){
 		query = query.replace(/,$/,'');
 		query += ');'
 		return new Promise(function(resolve, reject){
-			console.warn('INFO:\nQuery: %s\nValores: %s',query, JSON.stringify(newData));
 			db.transaction(function(tx){
 				tx.executeSql(query, newData)
 			}, function(err){
 				reject(err.message)
 			}, function(){
-				console.log('Consulta realizada con éxito.')
 				resolve(data)
 			})
 		})
@@ -228,9 +224,7 @@ function update(nombreTabla, jsonProp){
 	.then(function(data){
 		return new Promise(function(resolve, reject){
 			db.transaction(function(tx){
-				console.warn('INFO:\nQuery: %s\nValores: %s',data.consulta, JSON.stringify(data.valores));
 				tx.executeSql(query, data.valores, function(tx, results){
-					console.log('Registros actualizados: %s\nValores consultados: %s',results.rowsAffected,JSON.stringify(data.dataReturn) )
 					resolve(results.rowsAffected)
 				})
 			}, function(err){
@@ -265,9 +259,7 @@ function deleteReg(nombreTabla, jsonProp){
 	.then(function(data){
 		return new Promise(function(resolve, reject){
 			db.transaction(function(tx){
-				console.warn('INFO:\nQuery: %s\nValores: %s',data.consulta, JSON.stringify(data.valores));
 				tx.executeSql(query, data.valores, function(tx, results){
-					console.log('Registros eliminados: %s\nValores consultados: %s',results.rowsAffected,JSON.stringify(data.valores) )
 					resolve(results.rowsAffected)
 				})
 			}, function(err){
@@ -281,11 +273,9 @@ function deleteReg(nombreTabla, jsonProp){
 
 
 function getCondiciones(json, nombreTabla){
-	// console.log(json)
 	let query = '', condicion = '', mensaje = '', contBucle = 1;
-	let object = {};
+	let object = {}, objectVars = [], objectVals =[], objectCond =[];
 	if (json.where.variables && json.where.valores) {
-		console.log('Hay propiedades')
 		// se convierte en arreglo
 		objectVars = json.where.variables.replace(/,$/, '').split(',');
 		objectVals = json.where.valores.replace(/__$/, '').split('__');
