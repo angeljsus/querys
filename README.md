@@ -201,8 +201,10 @@ Ejecuta consultas de tipo `INSERT` para agregar información dentro de las tabla
 La función `insert` regresa un objeto de tipo `array` con la información que fue insertada dentro de la base de datos. En caso de no encontrar registros manda el objeto vacio `[]`.
 ```javascript
     let jsonInsert = {
-        "cols" : "89__Sammy Lorem__st Wally__Kansas City",
+        "cols" : "89__c__st Wally__Kansas City",
     }
+     // en columnas autoincrementables agregar cadena null
+     // {"cols" : "null__st Wally__Kansas City"} 
     
     insert('tabla1', jsonInsert)
      .then(function(respObj){
@@ -216,6 +218,7 @@ La función `insert` regresa un objeto de tipo `array` con la información que f
      .catch(function(errMsj){
          console.error(errMsj)
      })
+
 ```
 
 ### `update( tableName, { props } )`
