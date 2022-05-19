@@ -155,7 +155,7 @@ La función `select` regresa un objeto de tipo `array` con los datos encontrados
     select('tabla1', jsonQuery)
      .then(function(respObj){
         // ejemplo lectura del resultado: 
-        respObj.foreach(function(row){
+        respObj.forEach(function(row){
             console.log(row) // salida: { id:10, nombre:"Faustino", apellidos:"Masa López", ciudad:"Puebla", edad:34
             // propiedad
             console.log(row.nombre) // salida: Faustino
