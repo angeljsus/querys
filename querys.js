@@ -1,7 +1,6 @@
 const db = getDatabase();
 
 function select(nombreTabla, jsonProp){
-	console.log('Generando consulta..')
 	let query = 'SELECT ';
 	let objectVars = [], objectVals = [], objectCond = [], params = [], resultado = [];
 	let object = {}, jsonResponse = {}, hayWere = {};
@@ -34,7 +33,6 @@ function select(nombreTabla, jsonProp){
 		}
 	})
 	.then(function(data){
-		// console.warn(data)
 		queryReturn = data.consulta
 		return new Promise(function(resolve, reject){
 			// hay agrupaciones
