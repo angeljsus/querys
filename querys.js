@@ -278,7 +278,8 @@ function getCondiciones(json, nombreTabla){
 	if (json.where.variables && json.where.valores) {
 		// se convierte en arreglo
 		objectVars = json.where.variables.replace(/,$/, '').split(',');
-		objectVals = json.where.valores.replace(/__$/, '').split('__');
+		objectVals = json.where.valores.toString();
+		objectVals = objectVals.replace(/__$/, '').split('__');
 		if (json.where.condiciones) {
 			// hay condiciones
 			objectCond = json.where.condiciones.split(',')
